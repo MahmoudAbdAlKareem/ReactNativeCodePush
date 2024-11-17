@@ -36,8 +36,8 @@ jobs:
             --bundle-output dist/index.android.bundle \
             --assets-dest dist/
 
-      # Step 5: Upload the bundle to a static GitHub Release
-      - name: Create or Update GitHub Release
+      # Step 5: Upload or Replace the Release
+      - name: Create or Replace GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,3 +47,4 @@ jobs:
           body: "This release contains the latest JavaScript bundle for React Native."
           draft: false
           prerelease: false
+          replace: true # Allow replacing the release if it already exists
