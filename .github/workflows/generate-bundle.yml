@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - release
-  workflow_dispatch: # Enables manual trigger
+  workflow_dispatch:
 
 jobs:
   generate-bundle:
@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16 # Use the Node.js version compatible with your React Native app
+          node-version: 16
 
       # Step 3: Install dependencies
       - name: Install dependencies
@@ -36,14 +36,21 @@ jobs:
             --bundle-output dist/index.android.bundle \
             --assets-dest dist/
 
-      # Step 5: Upload the bundle to GitHub Releases
+      # Step 5: Create a valid tag
+      - name: Create Tag
+        id: create_tag
+        run: |
+          TAG_NAME="release-$(date +'%Y%m%d-%H%M%S')"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_ENV
+
+      # Step 6: Upload the bundle to GitHub Releases
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: dist/index.android.bundle
-          tag: ${{ github.sha }}
-          releaseName: "JS Bundle - ${{ github.ref_name }}"
+          tag: ${{ env.tag_name }}
+          releaseName: "JS Bundle - ${{ env.tag_name }}"
           body: "This release contains the latest JavaScript bundle."
           draft: false
           prerelease: true
