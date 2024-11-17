@@ -12,7 +12,8 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
-
+import java.io.File
+import java.net.URL
 
 class MainApplication : Application(), ReactApplication {
 
@@ -31,10 +32,16 @@ class MainApplication : Application(), ReactApplication {
             override fun getBundleAssetName(): String = "index.android.bundle"
 
             // Specify the path for the JS bundle if loading from assets or external storage
-            override fun getJSBundleFile(): String {
-                // Use "assets://index.android.bundle" if loading from assets,
-                // or specify a file path if loading an external bundle.
-                return "assets://index.android.bundle"
+            override fun getJSBundleFile(): String? {
+                val localBundlePath = "${applicationContext.filesDir}/index.android.bundle"
+
+                // Check if the local bundle exists
+                if (File(localBundlePath).exists()) {
+                    return localBundlePath
+                }
+
+                // Fallback to the assets bundle if the local one is not available
+                return super.getJSBundleFile()
             }
 
             override fun getPackages(): List<ReactPackage> =
@@ -48,12 +55,30 @@ class MainApplication : Application(), ReactApplication {
 
     override fun onCreate() {
         super.onCreate()
+        downloadLatestBundle()
         SoLoader.init(this, OpenSourceMergedSoMapping)
         Log.d("MainApplication", "Application initialized with bundle: index.android.bundle")
 
         if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
             // If you opted-in for the New Architecture, we load the native entry point for this app.
             load()
+
+        }
+    }
+
+    private fun downloadLatestBundle() {
+        val bundleUrl = "https://github.com/MahmoudAbdAlKareem/ReactNativeCodePush/dist/index.android.bundle"
+        val localBundlePath = "${applicationContext.filesDir}/index.android.bundle"
+
+        try {
+            val url = URL(bundleUrl)
+            url.openStream().use { input ->
+                File(localBundlePath).outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MainApplication", "Failed to download bundle", e)
         }
     }
 }
