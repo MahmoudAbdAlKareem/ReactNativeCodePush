@@ -1,0 +1,48 @@
+name: Generate and Deploy JS Bundle
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  generate-bundle:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Generate the JavaScript bundle
+      - name: Generate JS bundle
+        run: |
+          mkdir -p dist
+          react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output dist/index.android.bundle \
+            --assets-dest dist/
+
+      # Step 5: Upload the bundle to GitHub Releases
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: dist/index.android.bundle
+          tag: ${{ github.sha }}
+          releaseName: "JS Bundle - ${{ github.ref_name }}"
+          body: "This release contains the latest JavaScript bundle."
+          draft: false
+          prerelease: true
