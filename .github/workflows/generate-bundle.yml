@@ -29,7 +29,7 @@ jobs:
       - name: Generate JS bundle
         run: |
           mkdir -p dist
-          react-native bundle \
+          npx react-native bundle \
             --platform android \
             --dev false \
             --entry-file index.js \
