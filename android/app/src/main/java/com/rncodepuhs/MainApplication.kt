@@ -13,6 +13,7 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 
 class MainApplication : Application(), ReactApplication {
@@ -28,19 +29,17 @@ class MainApplication : Application(), ReactApplication {
 
             override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
 
-            // Always load a specific bundle from assets
-            override fun getBundleAssetName(): String = "index.android.bundle"
-
-            // Specify the path for the JS bundle if loading from assets or external storage
             override fun getJSBundleFile(): String? {
                 val localBundlePath = "${applicationContext.filesDir}/index.android.bundle"
 
-                // Check if the local bundle exists
+                // Check if the downloaded bundle exists
                 if (File(localBundlePath).exists()) {
+                    Log.d("MainApplication", "Using downloaded JS bundle: $localBundlePath")
                     return localBundlePath
                 }
 
-                // Fallback to the assets bundle if the local one is not available
+                // Fallback to the default assets bundle
+                Log.d("MainApplication", "Using fallback JS bundle from assets")
                 return super.getJSBundleFile()
             }
 
@@ -55,30 +54,31 @@ class MainApplication : Application(), ReactApplication {
 
     override fun onCreate() {
         super.onCreate()
-        downloadLatestBundle()
         SoLoader.init(this, OpenSourceMergedSoMapping)
-        Log.d("MainApplication", "Application initialized with bundle: index.android.bundle")
-
-        if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-            // If you opted-in for the New Architecture, we load the native entry point for this app.
-            load()
-
-        }
+        downloadLatestBundle()
     }
 
     private fun downloadLatestBundle() {
-        val bundleUrl = "https://github.com/MahmoudAbdAlKareem/ReactNativeCodePush/dist/index.android.bundle"
+        Log.d("MainApplication", "downloadLatestBundle")
+
+        val bundleUrl = "https://github.com/MahmoudAbdAlKareem/ReactNativeCodePush/releases/download/static-release/index.android.bundle"
         val localBundlePath = "${applicationContext.filesDir}/index.android.bundle"
 
-        try {
-            val url = URL(bundleUrl)
-            url.openStream().use { input ->
-                File(localBundlePath).outputStream().use { output ->
-                    input.copyTo(output)
+        Thread {
+            try {
+                Log.d("MainApplication", "Starting download from: $bundleUrl")
+                val url = URL(bundleUrl)
+                url.openStream().use { input ->
+                    File(localBundlePath).outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
+                Log.d("MainApplication", "Downloaded bundle to: $localBundlePath")
+            } catch (e: Exception) {
+                Log.e("MainApplication", "Failed to download bundle: ${e.message}", e)
             }
-        } catch (e: Exception) {
-            Log.e("MainApplication", "Failed to download bundle", e)
-        }
+        }.start()
     }
+
+
 }
