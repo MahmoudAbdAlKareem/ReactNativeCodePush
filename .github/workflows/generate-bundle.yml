@@ -15,17 +15,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
+      # Step 2: Delete Existing Release
+      - name: Delete Existing Release
+        run: |
+          curl -X DELETE \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/releases/tags/static-release || true
+
+      # Step 3: Delete Existing Tag
+      - name: Delete Existing Tag
+        run: |
+          git push --delete origin static-release || true
+
+      # Step 4: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
 
-      # Step 3: Install dependencies
+      # Step 5: Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Step 4: Generate the JavaScript bundle
+      # Step 6: Generate the JavaScript bundle
       - name: Generate JS bundle
         run: |
           mkdir -p dist
@@ -36,8 +49,8 @@ jobs:
             --bundle-output dist/index.android.bundle \
             --assets-dest dist/
 
-      # Step 5: Upload or Replace the Release
-      - name: Create or Replace GitHub Release
+      # Step 7: Upload the bundle to a new GitHub Release
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,4 +60,3 @@ jobs:
           body: "This release contains the latest JavaScript bundle for React Native."
           draft: false
           prerelease: false
-          replace: true # Allow replacing the release if it already exists
